@@ -39,7 +39,10 @@ class _SingleStockAdminPageState extends State<StocksPage> {
       await FirebaseFirestore.instance
           .collection('stocks')
           .doc(stockDocId)
-          .update({field: value, "timestamp": FieldValue.serverTimestamp()});
+          .update({
+            field: value,
+            "statusUpdatedAt": FieldValue.serverTimestamp(),
+          });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Success"),
@@ -67,7 +70,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             "tgt1": tgt1Controller.text,
             "tgt2": tgt2Controller.text,
             "tgt3": tgt3Controller.text,
-            "timestamp": FieldValue.serverTimestamp(),
+            "targetsUpdatedAt": FieldValue.serverTimestamp(),
           });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,6 +85,20 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     }
   }
 
+  Future<void> sendNotificationToFirestore(String action) async {
+    try {
+      await FirebaseFirestore.instance.collection('notificationsToSend').add({
+        'title': 'Stock Update',
+        'body': 'Stock action updated: $action',
+        'action': action,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('Notification document added to Firestore');
+    } catch (e) {
+      print('Error writing notification to Firestore: $e');
+    }
+  }
+
   Widget actionButton(String action, Color color) {
     final isSelected = selectedAction?.toLowerCase() == action.toLowerCase();
     return Expanded(
@@ -93,16 +110,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
           // Live update Firestore
           await updateLiveField("action", action);
           // Send push notification to all customers
-          final customers = await FirebaseFirestore.instance
-              .collection('customers')
-              .get();
-
-          for (var customer in customers.docs) {
-            final data = customer.data() as Map<String, dynamic>;
-            if (data['fcmToken'] != null) {
-              await sendPushNotification(data['fcmToken'], action);
-            }
-          }
+          await sendNotificationToFirestore(action);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected ? color : Colors.white,
