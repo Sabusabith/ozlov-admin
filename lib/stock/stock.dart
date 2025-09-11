@@ -40,12 +40,12 @@ class _SingleStockAdminPageState extends State<StocksPage> {
           .collection('stocks')
           .doc(stockDocId)
           .update({field: value, "timestamp": FieldValue.serverTimestamp()});
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text("$field updated successfully"),
-      //     duration: const Duration(seconds: 1), // short duration
-      //   ),
-      // );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Success"),
+          duration: const Duration(seconds: 1), // short duration
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,

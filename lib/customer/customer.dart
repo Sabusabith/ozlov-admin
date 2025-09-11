@@ -33,7 +33,6 @@ class _CustomersPageState extends State<CustomersPage> {
             ),
             const SizedBox(height: 20),
 
-            // Realtime customer list from Firestore
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: customersRef.snapshots(),
@@ -44,57 +43,21 @@ class _CustomersPageState extends State<CustomersPage> {
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Shimmer.fromColors(
-                                    baseColor: Colors.grey[800]!,
-                                    highlightColor: Colors.grey[600]!,
-                                    child: Container(
-                                      width: 120,
-                                      height: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Shimmer.fromColors(
-                                    baseColor: Colors.grey[800]!,
-                                    highlightColor: Colors.grey[600]!,
-                                    child: Container(
-                                      width: 80,
-                                      height: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Shimmer.fromColors(
-                                baseColor: Colors.grey[800]!,
-                                highlightColor: Colors.grey[600]!,
-                                child: Container(
-                                  width: 40,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          child: Shimmer.fromColors(
+                            baseColor: Colors.grey[800]!,
+                            highlightColor: Colors.grey[600]!,
+                            child: Container(height: 50, color: Colors.white),
                           ),
                         );
                       },
                     );
                   }
+
                   if (snapshot.hasError) {
                     return const Center(child: Text("Error loading customers"));
                   }
 
                   final docs = snapshot.data?.docs ?? [];
-
                   if (docs.isEmpty) {
                     return const Center(child: Text("No customers found"));
                   }
@@ -104,15 +67,10 @@ class _CustomersPageState extends State<CustomersPage> {
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
                       return customerItem(
+                        docs[index].id,
                         data["name"] ?? "",
                         data["phone"] ?? "",
                         data["active"] ?? false,
-                        (value) {
-                          // Update "active" in Firestore
-                          customersRef.doc(docs[index].id).update({
-                            "active": value,
-                          });
-                        },
                       );
                     },
                   );
@@ -124,19 +82,15 @@ class _CustomersPageState extends State<CustomersPage> {
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCustomerDialog(context),
+        onPressed: () => _showAddOrEditCustomerDialog(context),
         backgroundColor: kseccolor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget customerItem(
-    String name,
-    String phone,
-    bool isActive,
-    ValueChanged<bool> onChanged,
-  ) {
+  // Customer row with actions
+  Widget customerItem(String docId, String name, String phone, bool isActive) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -152,21 +106,40 @@ class _CustomersPageState extends State<CustomersPage> {
               Text(phone, style: const TextStyle(color: Colors.grey)),
             ],
           ),
-          Switch(
-            value: isActive,
-            onChanged: onChanged,
-            activeColor: Colors.orange,
+          Row(
+            children: [
+              Switch(
+                value: isActive,
+                onChanged: (value) {
+                  customersRef.doc(docId).update({'active': value});
+                },
+                activeColor: Colors.orange,
+              ),
+              CustomerActions(
+                docId: docId,
+                name: name,
+                phone: phone,
+                isActive: isActive,
+                onUpdated: () => setState(() {}),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _showAddCustomerDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final passwordController = TextEditingController();
-    bool accessEnabled = false;
+  // Add or Edit customer dialog
+  void _showAddOrEditCustomerDialog(
+    BuildContext context, {
+    String? docId,
+    String? initialName,
+    String? initialPhone,
+    bool initialActive = false,
+  }) {
+    final nameController = TextEditingController(text: initialName ?? '');
+    final phoneController = TextEditingController(text: initialPhone ?? '');
+    bool accessEnabled = initialActive;
     bool isSaving = false;
 
     showDialog(
@@ -185,43 +158,28 @@ class _CustomersPageState extends State<CustomersPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Add Customer",
-                      style: TextStyle(
+                    Text(
+                      docId == null ? "Add Customer" : "Edit Customer",
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // Customer Name
                     TextField(
                       controller: nameController,
                       style: const TextStyle(color: Colors.white),
                       decoration: _inputDecoration("Customer Name"),
                     ),
                     const SizedBox(height: 20),
-
-                    // Mobile Number
                     TextField(
                       controller: phoneController,
                       style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.phone,
                       decoration: _inputDecoration("Mobile Number"),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Password
-                    TextField(
-                      controller: passwordController,
-                      style: const TextStyle(color: Colors.white),
-                      obscureText: true,
-                      decoration: _inputDecoration("Password"),
-                    ),
                     const SizedBox(height: 12),
-
-                    // Switch
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -232,17 +190,13 @@ class _CustomersPageState extends State<CustomersPage> {
                         Switch(
                           value: accessEnabled,
                           onChanged: (value) {
-                            setStateDialog(() {
-                              accessEnabled = value;
-                            });
+                            setStateDialog(() => accessEnabled = value);
                           },
                           activeColor: Colors.orange,
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -259,8 +213,7 @@ class _CustomersPageState extends State<CustomersPage> {
                               ? null
                               : () async {
                                   if (nameController.text.isEmpty ||
-                                      phoneController.text.isEmpty ||
-                                      passwordController.text.isEmpty) {
+                                      phoneController.text.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         backgroundColor: Colors.red,
@@ -272,32 +225,40 @@ class _CustomersPageState extends State<CustomersPage> {
                                     return;
                                   }
 
-                                  setStateDialog(() {
-                                    isSaving = true;
-                                  });
+                                  setStateDialog(() => isSaving = true);
 
                                   try {
-                                    await customersRef.add({
-                                      "name": nameController.text,
-                                      "phone": phoneController.text,
-                                      "password": passwordController.text,
-                                      "active": accessEnabled,
-                                       "isLoggedIn": false, 
-                                      "timestamp": FieldValue.serverTimestamp(),
-                                    });
+                                    if (docId == null) {
+                                      await customersRef.add({
+                                        "name": nameController.text,
+                                        "phone": phoneController.text,
+                                        "active": accessEnabled,
+                                        "isLoggedIn": false,
+                                        "timestamp":
+                                            FieldValue.serverTimestamp(),
+                                      });
+                                    } else {
+                                      await customersRef.doc(docId).update({
+                                        "name": nameController.text,
+                                        "phone": phoneController.text,
+                                        "active": accessEnabled,
+                                      });
+                                    }
 
                                     Navigator.pop(context);
 
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         backgroundColor: Colors.green,
-                                        content: Text("Customer Saved"),
+                                        content: Text(
+                                          docId == null
+                                              ? "Customer Added"
+                                              : "Customer Updated",
+                                        ),
                                       ),
                                     );
                                   } catch (e) {
-                                    setStateDialog(() {
-                                      isSaving = false;
-                                    });
+                                    setStateDialog(() => isSaving = false);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Colors.red,
@@ -319,7 +280,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text("Save"),
+                              : Text(docId == null ? "Save" : "Update"),
                         ),
                       ],
                     ),
@@ -351,6 +312,63 @@ class _CustomersPageState extends State<CustomersPage> {
         borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(color: Colors.orange),
       ),
+    );
+  }
+}
+
+// Separate widget for Edit/Delete actions
+class CustomerActions extends StatelessWidget {
+  final String docId;
+  final String name;
+  final String phone;
+  final bool isActive;
+  final VoidCallback? onUpdated;
+
+  const CustomerActions({
+    super.key,
+    required this.docId,
+    required this.name,
+    required this.phone,
+    required this.isActive,
+    this.onUpdated,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.edit, color: Colors.orange),
+          onPressed: () {
+            // Call edit dialog from parent
+            final parentState = context
+                .findAncestorStateOfType<_CustomersPageState>();
+            parentState?._showAddOrEditCustomerDialog(
+              context,
+              docId: docId,
+              initialName: name,
+              initialPhone: phone,
+              initialActive: isActive,
+            );
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () async {
+            await FirebaseFirestore.instance
+                .collection('customers')
+                .doc(docId)
+                .delete();
+            if (onUpdated != null) onUpdated!();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Colors.green,
+                content: Text("Customer Deleted"),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

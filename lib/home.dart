@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:prototype/auth/login.dart';
-import 'package:prototype/customer.dart';
+import 'package:prototype/customer/customer.dart';
 import 'package:prototype/stock/stock.dart';
 import 'package:prototype/utils/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,7 +60,7 @@ class _HomeState extends State<Home> {
               onTap: () async {
                 // Navigate to login screen
                 SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.remove('email'); // Clear logged-in user
+                await prefs.clear();
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (_) => LoginPage()),

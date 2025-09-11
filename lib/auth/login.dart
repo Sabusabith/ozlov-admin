@@ -1,15 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:prototype/home.dart';
 import 'package:prototype/utils/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController usernameController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+  State<LoginPage> createState() => _LoginPageState();
+}
 
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  // Check if user is already logged in
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    if (isLoggedIn) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Home()),
+      );
+    }
+  }
+
+  // Save login credentials
+  Future<void> _saveLogin() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('username', usernameController.text);
+    await prefs.setString('password', passwordController.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kprimerycolor,
       body: Center(
@@ -28,8 +60,9 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              // Username field
+              // Username
               TextField(
+                style: const TextStyle(color: Colors.white),
                 controller: usernameController,
                 decoration: InputDecoration(
                   hintText: "Username",
@@ -38,7 +71,7 @@ class LoginPage extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: Colors.white),
+                    borderSide: const BorderSide(color: Colors.white),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: 14,
@@ -48,8 +81,9 @@ class LoginPage extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
-              // Password field
+              // Password
               TextField(
+                style: const TextStyle(color: Colors.white),
                 controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
@@ -59,7 +93,7 @@ class LoginPage extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: Colors.white),
+                    borderSide: const BorderSide(color: Colors.white),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     vertical: 14,
@@ -77,19 +111,20 @@ class LoginPage extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kseccolor,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24), // rounded edges
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  onPressed: () {
-                    if (usernameController.value == "Admin" &&
-                        passwordController.value == "admin@123") {
+                  onPressed: () async {
+                    if (usernameController.text == "Admin" &&
+                        passwordController.text == "admin@123") {
+                      await _saveLogin(); // Save login info
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (context) => const Home()),
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Invalid credentials")),
+                        const SnackBar(content: Text("Invalid credentials")),
                       );
                     }
                   },

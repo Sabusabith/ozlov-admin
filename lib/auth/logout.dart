@@ -36,7 +36,11 @@ class LogoutScreen extends StatelessWidget {
                       // Navigate to login screen
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
-                      await prefs.remove('email'); // Clear logged-in user
+                      await prefs.setBool(
+                        'isLoggedIn',
+                        false,
+                      ); // Clear all saved data
+
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => LoginPage()),
