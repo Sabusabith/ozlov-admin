@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:prototype/core/push_notification/send_push_notification.dart';
+import 'package:prototype/admin_app/core/push_notification/send_push_notification.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 
 import 'package:prototype/utils/colors.dart';

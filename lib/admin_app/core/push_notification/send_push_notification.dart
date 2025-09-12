@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:prototype/core/service/auth2service.dart';
+import 'package:prototype/admin_app/core/service/auth2service.dart';
 
 Future<void> sendPushNotification({
   required String projectId,

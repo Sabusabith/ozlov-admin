@@ -1,19 +1,20 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:prototype/admin_app/core/admin_logout/admin_logout.dart';
 import 'package:prototype/auth/login.dart';
-import 'package:prototype/customer/customer.dart';
-import 'package:prototype/stock/stock.dart';
+import 'package:prototype/admin_app/customer/customer.dart';
+import 'package:prototype/admin_app/stock/stock.dart';
 import 'package:prototype/utils/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Home extends StatefulWidget {
-  const Home({super.key});
+class AdminHome extends StatefulWidget {
+  const AdminHome({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  State<AdminHome> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<AdminHome> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [StocksPage(), const CustomersPage()];
@@ -59,13 +60,7 @@ class _HomeState extends State<Home> {
             GestureDetector(
               onTap: () async {
                 // Navigate to login screen
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginPage()),
-                  (route) => false,
-                );
+                adminLogout(context);
               },
               child: Icon(Icons.logout, color: Colors.white, size: 35),
             ),
