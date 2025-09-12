@@ -116,10 +116,16 @@ class _CustomersPageState extends State<CustomersPage> {
               Switch(
                 value: isActive,
                 onChanged: (value) {
-                  customersRef.doc(docId).update({'active': value});
+                  customersRef.doc(docId).update({
+                    'active': value,
+                    if (!value)
+                      'isLoggedIn':
+                          false, // Set isLoggedIn to false if deactivated
+                  });
                 },
                 activeColor: Colors.orange,
               ),
+
               CustomerActions(
                 docId: docId,
                 name: name,
