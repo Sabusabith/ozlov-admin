@@ -74,7 +74,19 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             "tgt3": tgt3Controller.text,
             "targetsUpdatedAt": FieldValue.serverTimestamp(),
           });
-
+      // ✅ Send push notification
+      await sendPushNotification(
+        projectId: "ozvol-admin", // replace with your Firebase project ID
+        topic: "allCustomers",
+        action: "Targets Updated",
+        stockName: stockNameController.text,
+        extraData: {
+          "sl": slController.text,
+          "tgt1": tgt1Controller.text,
+          "tgt2": tgt2Controller.text,
+          "tgt3": tgt3Controller.text,
+        },
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Stock fields updated successfully")),
       );
