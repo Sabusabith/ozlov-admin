@@ -41,6 +41,7 @@ dependencies:
   shared_preferences: ^2.5.3
   http: ^1.5.0
   intl: ^0.20.2
+  googleapis_auth: ^2.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.3
@@ -73,6 +74,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/serviceAccountKey.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

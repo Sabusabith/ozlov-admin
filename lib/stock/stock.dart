@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:prototype/fcm/fcm.dart';
+import 'package:prototype/core/push_notification/send_push_notification.dart';
+import 'package:googleapis_auth/auth_io.dart' as auth;
+
 import 'package:prototype/utils/colors.dart';
 
 class StocksPage extends StatefulWidget {
@@ -85,20 +87,6 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     }
   }
 
-  Future<void> sendNotificationToFirestore(String action) async {
-    try {
-      await FirebaseFirestore.instance.collection('notificationsToSend').add({
-        'title': 'Stock Update',
-        'body': 'Stock action updated: $action',
-        'action': action,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      print('Notification document added to Firestore');
-    } catch (e) {
-      print('Error writing notification to Firestore: $e');
-    }
-  }
-
   Widget actionButton(String action, Color color) {
     final isSelected = selectedAction?.toLowerCase() == action.toLowerCase();
     return Expanded(
@@ -110,7 +98,12 @@ class _SingleStockAdminPageState extends State<StocksPage> {
           // Live update Firestore
           await updateLiveField("action", action);
           // Send push notification to all customers
-          await sendNotificationToFirestore(action);
+          await sendPushNotification(
+            projectId: "ozvol-admin", // from Firebase settings
+            topic: "allCustomers",
+            action: action,
+            stockName: stockNameController.text,
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected ? color : Colors.white,

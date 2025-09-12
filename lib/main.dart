@@ -8,20 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  FirebaseFirestore.instance
-      .collection('notificationsToSend')
-      .orderBy('createdAt', descending: true)
-      .snapshots()
-      .listen((snapshot) {
-        for (var doc in snapshot.docChanges) {
-          if (doc.type == DocumentChangeType.added) {
-            final data = doc.doc.data()!;
-            // Show notification locally
-            print('New notification: ${data['body']}');
-          }
-        }
-      });
-
+  
   runApp(MyApp());
 }
 
