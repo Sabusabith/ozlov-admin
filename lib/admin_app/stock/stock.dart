@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:prototype/admin_app/core/push_notification/send_push_notification.dart';
-import 'package:googleapis_auth/auth_io.dart' as auth;
-
+import 'package:prototype/admin_app/core/push_notification/send_push_notification.dart'; // Ensure this points to your notification function
 import 'package:prototype/utils/colors.dart';
 
 class StocksPage extends StatefulWidget {
@@ -34,7 +32,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     super.dispose();
   }
 
-  /// Live update for stockName or action
+  /// Update Firestore field live
   Future<void> updateLiveField(String field, dynamic value) async {
     if (stockDocId == null) return;
     try {
@@ -45,12 +43,6 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             field: value,
             "statusUpdatedAt": FieldValue.serverTimestamp(),
           });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Success"),
-          duration: const Duration(seconds: 1), // short duration
-        ),
-      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
@@ -58,7 +50,29 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     }
   }
 
-  /// Save / update remaining fields
+  /// Notify active users with custom fields
+  Future<void> notifyActiveUsers({
+    String? action,
+    String? stockName,
+    String? sl,
+    String? tgt1,
+    String? tgt2,
+    String? tgt3,
+  }) async {
+    await sendPushNotificationToActiveUsers(
+      projectId: "ozvol-admin",
+      action: action ?? "",
+      stockName: stockName ?? "",
+      extraData: {
+        if (sl != null) "sl": sl,
+        if (tgt1 != null) "tgt1": tgt1,
+        if (tgt2 != null) "tgt2": tgt2,
+        if (tgt3 != null) "tgt3": tgt3,
+      },
+    );
+  }
+
+  /// Save / Update SL & Targets
   Future<void> saveStock() async {
     if (stockDocId == null) return;
 
@@ -74,19 +88,15 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             "tgt3": tgt3Controller.text,
             "targetsUpdatedAt": FieldValue.serverTimestamp(),
           });
-      // ✅ Send push notification
-      await sendPushNotification(
-        projectId: "ozvol-admin", // replace with your Firebase project ID
-        topic: "allCustomers",
-        action: "Targets Updated",
-        stockName: stockNameController.text,
-        extraData: {
-          "sl": slController.text,
-          "tgt1": tgt1Controller.text,
-          "tgt2": tgt2Controller.text,
-          "tgt3": tgt3Controller.text,
-        },
+
+      // Notify active users with only SL/TGTs
+      await notifyActiveUsers(
+        sl: slController.text,
+        tgt1: tgt1Controller.text,
+        tgt2: tgt2Controller.text,
+        tgt3: tgt3Controller.text,
       );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Stock fields updated successfully")),
       );
@@ -104,17 +114,12 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     return Expanded(
       child: ElevatedButton(
         onPressed: () async {
-          setState(() {
-            selectedAction = action;
-          });
-          // Live update Firestore
+          setState(() => selectedAction = action);
           await updateLiveField("action", action);
-          // Send push notification to all customers
-          await sendPushNotification(
-            projectId: "ozvol-admin", // from Firebase settings
-            topic: "allCustomers",
-            action: action,
+          // Notify live edit: stockName + action only
+          await notifyActiveUsers(
             stockName: stockNameController.text,
+            action: action,
           );
         },
         style: ElevatedButton.styleFrom(
@@ -146,11 +151,16 @@ class _SingleStockAdminPageState extends State<StocksPage> {
         ),
         const SizedBox(height: 5),
         TextField(
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white),
           controller: controller,
           onChanged: liveUpdate && fieldName != null
-              ? (value) {
-                  updateLiveField(fieldName, value);
+              ? (value) async {
+                  await updateLiveField(fieldName, value);
+                  // Notify live edit: only stockName + action
+                  await notifyActiveUsers(
+                    stockName: stockNameController.text,
+                    action: selectedAction ?? "",
+                  );
                 }
               : null,
           decoration: InputDecoration(
@@ -197,7 +207,6 @@ class _SingleStockAdminPageState extends State<StocksPage> {
           stockDocId = stock.id;
           final data = stock.data() as Map<String, dynamic>;
 
-          // Initialize controllers only once
           if (!_controllersInitialized) {
             stockNameController.text = data['stockName'] ?? '';
             slController.text = data['sl'] ?? '';
@@ -213,7 +222,6 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Stock Name live update
                 inputField(
                   "Stock Name",
                   stockNameController,
@@ -237,7 +245,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
                     actionButton("Exit", Colors.red),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 inputField("SL", slController),
                 inputField("TGT 1", tgt1Controller),
                 inputField("TGT 2", tgt2Controller),
