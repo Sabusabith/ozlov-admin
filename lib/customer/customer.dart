@@ -32,7 +32,6 @@ class _CustomersPageState extends State<CustomersPage> {
               ),
             ),
             const SizedBox(height: 20),
-
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: customersRef.snapshots(),
@@ -71,6 +70,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         data["name"] ?? "",
                         data["phone"] ?? "",
                         data["active"] ?? false,
+                        data["password"] ?? "",
                       );
                     },
                   );
@@ -80,7 +80,6 @@ class _CustomersPageState extends State<CustomersPage> {
           ],
         ),
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddOrEditCustomerDialog(context),
         backgroundColor: kseccolor,
@@ -90,7 +89,13 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   // Customer row with actions
-  Widget customerItem(String docId, String name, String phone, bool isActive) {
+  Widget customerItem(
+    String docId,
+    String name,
+    String phone,
+    bool isActive,
+    String password,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -119,6 +124,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 docId: docId,
                 name: name,
                 phone: phone,
+                password: password,
                 isActive: isActive,
                 onUpdated: () => setState(() {}),
               ),
@@ -135,12 +141,18 @@ class _CustomersPageState extends State<CustomersPage> {
     String? docId,
     String? initialName,
     String? initialPhone,
+    String? initialPassword,
     bool initialActive = false,
   }) {
     final nameController = TextEditingController(text: initialName ?? '');
     final phoneController = TextEditingController(text: initialPhone ?? '');
+    final passwordController = TextEditingController(
+      text: initialPassword ?? '',
+    );
+
     bool accessEnabled = initialActive;
     bool isSaving = false;
+    bool obscurePassword = true;
 
     showDialog(
       context: context,
@@ -154,137 +166,170 @@ class _CustomersPageState extends State<CustomersPage> {
               backgroundColor: const Color(0xFF3B2E2E),
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      docId == null ? "Add Customer" : "Edit Customer",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        docId == null ? "Add Customer" : "Edit Customer",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: nameController,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: _inputDecoration("Customer Name"),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: phoneController,
-                      style: const TextStyle(color: Colors.white),
-                      keyboardType: TextInputType.phone,
-                      decoration: _inputDecoration("Mobile Number"),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Access Enabled",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        Switch(
-                          value: accessEnabled,
-                          onChanged: (value) {
-                            setStateDialog(() => accessEnabled = value);
-                          },
-                          activeColor: Colors.orange,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            "Cancel",
-                            style: TextStyle(color: Colors.orange),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: nameController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration("Customer Name"),
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: phoneController,
+                        style: const TextStyle(color: Colors.white),
+                        keyboardType: TextInputType.phone,
+                        decoration: _inputDecoration("Mobile Number"),
+                      ),
+                      const SizedBox(height: 20),
+                      // PASSWORD FIELD
+                      TextField(
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration("Password").copyWith(
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () {
+                              setStateDialog(
+                                () => obscurePassword = !obscurePassword,
+                              );
+                            },
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: isSaving
-                              ? null
-                              : () async {
-                                  if (nameController.text.isEmpty ||
-                                      phoneController.text.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        backgroundColor: Colors.red,
-                                        content: Text(
-                                          "Please fill all required fields",
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Access Enabled",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Switch(
+                            value: accessEnabled,
+                            onChanged: (value) {
+                              setStateDialog(() => accessEnabled = value);
+                            },
+                            activeColor: Colors.orange,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.orange),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: isSaving
+                                ? null
+                                : () async {
+                                    if (nameController.text.isEmpty ||
+                                        phoneController.text.isEmpty ||
+                                        passwordController.text.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          backgroundColor: Colors.red,
+                                          content: Text(
+                                            "Please fill all required fields",
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  setStateDialog(() => isSaving = true);
-
-                                  try {
-                                    if (docId == null) {
-                                      await customersRef.add({
-                                        "name": nameController.text,
-                                        "phone": phoneController.text,
-                                        "active": accessEnabled,
-                                        "isLoggedIn": false,
-                                        "timestamp":
-                                            FieldValue.serverTimestamp(),
-                                      });
-                                    } else {
-                                      await customersRef.doc(docId).update({
-                                        "name": nameController.text,
-                                        "phone": phoneController.text,
-                                        "active": accessEnabled,
-                                      });
+                                      );
+                                      return;
                                     }
 
-                                    Navigator.pop(context);
+                                    setStateDialog(() => isSaving = true);
 
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: Colors.green,
-                                        content: Text(
-                                          docId == null
-                                              ? "Customer Added"
-                                              : "Customer Updated",
+                                    try {
+                                      if (docId == null) {
+                                        await customersRef.add({
+                                          "name": nameController.text,
+                                          "phone": phoneController.text,
+                                          "password": passwordController.text,
+                                          "active": accessEnabled,
+                                          "isLoggedIn": false,
+                                          "timestamp":
+                                              FieldValue.serverTimestamp(),
+                                        });
+                                      } else {
+                                        await customersRef.doc(docId).update({
+                                          "name": nameController.text,
+                                          "phone": phoneController.text,
+                                          "password": passwordController.text,
+                                          "active": accessEnabled,
+                                        });
+                                      }
+
+                                      Navigator.pop(context);
+
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Colors.green,
+                                          content: Text(
+                                            docId == null
+                                                ? "Customer Added"
+                                                : "Customer Updated",
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    setStateDialog(() => isSaving = false);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        backgroundColor: Colors.red,
-                                        content: Text("Error: $e"),
-                                      ),
-                                    );
-                                  }
-                                },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
+                                      );
+                                    } catch (e) {
+                                      setStateDialog(() => isSaving = false);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          backgroundColor: Colors.red,
+                                          content: Text("Error: $e"),
+                                        ),
+                                      );
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: isSaving
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(docId == null ? "Save" : "Update"),
                           ),
-                          child: isSaving
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(docId == null ? "Save" : "Update"),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -321,6 +366,7 @@ class CustomerActions extends StatelessWidget {
   final String docId;
   final String name;
   final String phone;
+  final String password;
   final bool isActive;
   final VoidCallback? onUpdated;
 
@@ -329,6 +375,7 @@ class CustomerActions extends StatelessWidget {
     required this.docId,
     required this.name,
     required this.phone,
+    required this.password,
     required this.isActive,
     this.onUpdated,
   });
@@ -340,7 +387,6 @@ class CustomerActions extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.edit, color: Colors.orange),
           onPressed: () {
-            // Call edit dialog from parent
             final parentState = context
                 .findAncestorStateOfType<_CustomersPageState>();
             parentState?._showAddOrEditCustomerDialog(
@@ -348,6 +394,7 @@ class CustomerActions extends StatelessWidget {
               docId: docId,
               initialName: name,
               initialPhone: phone,
+              initialPassword: password,
               initialActive: isActive,
             );
           },
