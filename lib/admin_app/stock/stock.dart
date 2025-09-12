@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:prototype/admin_app/core/push_notification/send_push_notification.dart'; // Ensure this points to your notification function
+import 'package:prototype/admin_app/core/push_notification/send_push_notification.dart';
 import 'package:prototype/utils/colors.dart';
 
 class StocksPage extends StatefulWidget {
@@ -50,7 +50,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     }
   }
 
-  /// Notify active users with custom fields
+  /// Notify active users
   Future<void> notifyActiveUsers({
     String? action,
     String? stockName,
@@ -58,16 +58,18 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     String? tgt1,
     String? tgt2,
     String? tgt3,
+    bool isTargetUpdate = false,
   }) async {
     await sendPushNotificationToActiveUsers(
       projectId: "ozvol-admin",
-      action: action ?? "",
+      action: action,
       stockName: stockName ?? "",
+      isTargetUpdate: isTargetUpdate,
       extraData: {
-        if (sl != null) "sl": sl,
-        if (tgt1 != null) "tgt1": tgt1,
-        if (tgt2 != null) "tgt2": tgt2,
-        if (tgt3 != null) "tgt3": tgt3,
+        if (sl != null && sl.isNotEmpty) "SL": sl,
+        if (tgt1 != null && tgt1.isNotEmpty) "TGT1": tgt1,
+        if (tgt2 != null && tgt2.isNotEmpty) "TGT2": tgt2,
+        if (tgt3 != null && tgt3.isNotEmpty) "TGT3": tgt3,
       },
     );
   }
@@ -89,12 +91,14 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             "targetsUpdatedAt": FieldValue.serverTimestamp(),
           });
 
-      // Notify active users with only SL/TGTs
+      // ✅ Notify with isTargetUpdate true
       await notifyActiveUsers(
+        stockName: stockNameController.text,
         sl: slController.text,
         tgt1: tgt1Controller.text,
         tgt2: tgt2Controller.text,
         tgt3: tgt3Controller.text,
+        isTargetUpdate: true,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,7 +120,8 @@ class _SingleStockAdminPageState extends State<StocksPage> {
         onPressed: () async {
           setState(() => selectedAction = action);
           await updateLiveField("action", action);
-          // Notify live edit: stockName + action only
+
+          // ✅ Notify only action updates
           await notifyActiveUsers(
             stockName: stockNameController.text,
             action: action,
@@ -156,11 +161,14 @@ class _SingleStockAdminPageState extends State<StocksPage> {
           onChanged: liveUpdate && fieldName != null
               ? (value) async {
                   await updateLiveField(fieldName, value);
-                  // Notify live edit: only stockName + action
-                  await notifyActiveUsers(
-                    stockName: stockNameController.text,
-                    action: selectedAction ?? "",
-                  );
+
+                  // ✅ Prevent sending empty action
+                  if (selectedAction != null && selectedAction!.isNotEmpty) {
+                    await notifyActiveUsers(
+                      stockName: stockNameController.text,
+                      action: selectedAction,
+                    );
+                  }
                 }
               : null,
           decoration: InputDecoration(
