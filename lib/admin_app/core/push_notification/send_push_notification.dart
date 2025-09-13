@@ -59,17 +59,12 @@ Future<void> sendPushNotificationToActiveUsers({
           "notification": {"title": title, "body": bodyText},
           "android": {
             "priority": "high",
-
-            "notification": {
-              "channel_id": "default_channel",
-              "sound": "alert_tone",
-            },
+            "notification": {"channel_id": "default_channel"},
           },
           "apns": {
             "payload": {
               "aps": {
                 "alert": {"title": title, "body": bodyText},
-                "sound": "alert_tone.wav",
                 "content-available": 1,
               },
             },
@@ -95,6 +90,20 @@ Future<void> sendPushNotificationToActiveUsers({
 
       if (response.statusCode != 200) {
         print("❌ Error sending to ${doc.id}: ${response.body}");
+        final error = jsonDecode(response.body);
+
+        if (error["error"]?["details"] != null) {
+          for (var detail in error["error"]["details"]) {
+            if (detail["errorCode"] == "UNREGISTERED") {
+              // 🔹 Clean up invalid token
+              await FirebaseFirestore.instance
+                  .collection('customers')
+                  .doc(doc.id)
+                  .update({'fcmToken': FieldValue.delete()});
+              print("🗑️ Removed invalid token for ${doc.id}");
+            }
+          }
+        }
       }
     }
 
