@@ -119,9 +119,18 @@ class _SingleStockAdminPageState extends State<StocksPage> {
       child: ElevatedButton(
         onPressed: () async {
           setState(() => selectedAction = action);
-          await updateLiveField("action", action);
 
-          // ✅ Notify only action updates
+          // ✅ Update both action + stockName together
+          await FirebaseFirestore.instance
+              .collection('stocks')
+              .doc(stockDocId)
+              .update({
+                "action": action,
+                "stockName": stockNameController.text,
+                "statusUpdatedAt": FieldValue.serverTimestamp(),
+              });
+
+          // ✅ Notify users with stockName + action
           await notifyActiveUsers(
             stockName: stockNameController.text,
             action: action,
@@ -233,7 +242,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
                 inputField(
                   "Stock Name",
                   stockNameController,
-                  liveUpdate: true,
+
                   fieldName: "stockName",
                 ),
                 const Text(

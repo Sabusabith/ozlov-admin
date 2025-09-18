@@ -115,8 +115,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   onPressed: () async {
-                    if (usernameController.text == "Admin" &&
-                        passwordController.text == "admin@123") {
+                    if (usernameController.text == "CHEPM7103D" &&
+                        passwordController.text == "9072107120") {
                       await _saveLogin(); // Save login info
                       Navigator.pushReplacement(
                         context,
