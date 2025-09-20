@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "385829998655",
-    "project_id": "ozvol-admin",
-    "storage_bucket": "ozvol-admin.firebasestorage.app"
+    "project_number": "11689458747",
+    "project_id": "ozvol-52b7e",
+    "storage_bucket": "ozvol-52b7e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:385829998655:android:4df3e613cf0d1dc565a88a",
+        "mobilesdk_app_id": "1:11689458747:android:8c3926dd815922a806701e",
         "android_client_info": {
-          "package_name": "com.example.ozvol_customer"
+          "package_name": "com.example.ozvoladmin"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAxp62xFpZo9cjUUoI6BqEOugz1OgfInz8"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:385829998655:android:8ec1e8a69b1b5bef65a88a",
-        "android_client_info": {
-          "package_name": "com.example.prototype"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAxp62xFpZo9cjUUoI6BqEOugz1OgfInz8"
+          "current_key": "AIzaSyD5VwmAbx2NApvGyLs4FVPx0CRdiE1eBfQ"
         }
       ],
       "services": {

@@ -1,4 +1,4 @@
-package com.example.prototype
+package com.example.ozvoladmin
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -61,7 +61,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     bool isTargetUpdate = false,
   }) async {
     await sendPushNotificationToActiveUsers(
-      projectId: "ozvol-admin",
+      projectId: "ozvol-52b7e",
       action: action,
       stockName: stockName ?? "",
       isTargetUpdate: isTargetUpdate,
@@ -197,10 +197,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kprimerycolor,
-      appBar: AppBar(
-        title: const Text("Single Stock Admin"),
-        backgroundColor: kprimerycolor,
-      ),
+
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('stocks')
@@ -211,29 +208,26 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text(
-                "No stock found",
-                style: TextStyle(color: Colors.white),
-              ),
-            );
+          if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+            final stock = snapshot.data!.docs.first;
+            stockDocId = stock.id;
+            final data = stock.data() as Map<String, dynamic>;
+
+            if (!_controllersInitialized) {
+              stockNameController.text = data['stockName'] ?? '';
+              slController.text = data['sl'] ?? '';
+              tgt1Controller.text = data['tgt1'] ?? '';
+              tgt2Controller.text = data['tgt2'] ?? '';
+              tgt3Controller.text = data['tgt3'] ?? '';
+              selectedAction = data['action'];
+              _controllersInitialized = true;
+            }
+          } else {
+            // ❌ When no data, reset stockDocId
+            stockDocId = null;
           }
 
-          final stock = snapshot.data!.docs.first;
-          stockDocId = stock.id;
-          final data = stock.data() as Map<String, dynamic>;
-
-          if (!_controllersInitialized) {
-            stockNameController.text = data['stockName'] ?? '';
-            slController.text = data['sl'] ?? '';
-            tgt1Controller.text = data['tgt1'] ?? '';
-            tgt2Controller.text = data['tgt2'] ?? '';
-            tgt3Controller.text = data['tgt3'] ?? '';
-            selectedAction = data['action'];
-            _controllersInitialized = true;
-          }
-
+          // ✅ Always show the UI (even if no Firestore doc)
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -242,7 +236,6 @@ class _SingleStockAdminPageState extends State<StocksPage> {
                 inputField(
                   "Stock Name",
                   stockNameController,
-
                   fieldName: "stockName",
                 ),
                 const Text(
@@ -270,7 +263,27 @@ class _SingleStockAdminPageState extends State<StocksPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: isLoading ? null : saveStock,
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            if (stockDocId == null) {
+                              // ✅ Create new doc if not exists
+                              final newDoc = await FirebaseFirestore.instance
+                                  .collection('stocks')
+                                  .add({
+                                    "stockName": stockNameController.text,
+                                    "sl": slController.text,
+                                    "tgt1": tgt1Controller.text,
+                                    "tgt2": tgt2Controller.text,
+                                    "tgt3": tgt3Controller.text,
+                                    "action": selectedAction ?? "",
+                                    "createdAt": FieldValue.serverTimestamp(),
+                                  });
+                              stockDocId = newDoc.id;
+                            } else {
+                              await saveStock();
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kseccolor,
                       foregroundColor: Colors.white,
