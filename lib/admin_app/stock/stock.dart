@@ -120,21 +120,35 @@ class _SingleStockAdminPageState extends State<StocksPage> {
         onPressed: () async {
           setState(() => selectedAction = action);
 
-          // ✅ Update both action + stockName together
-          await FirebaseFirestore.instance
-              .collection('stocks')
-              .doc(stockDocId)
-              .update({
-                "action": action,
-                "stockName": stockNameController.text,
-                "statusUpdatedAt": FieldValue.serverTimestamp(),
-              });
+          try {
+            // ✅ Update both action + stockName together
+            await FirebaseFirestore.instance
+                .collection('stocks')
+                .doc(stockDocId)
+                .update({
+                  "action": action,
+                  "stockName": stockNameController.text,
+                  "statusUpdatedAt": FieldValue.serverTimestamp(),
+                });
 
-          // ✅ Notify users with stockName + action
-          await notifyActiveUsers(
-            stockName: stockNameController.text,
-            action: action,
-          );
+            // ✅ Notify users with stockName + action
+            await notifyActiveUsers(
+              stockName: stockNameController.text,
+              action: action,
+            );
+
+            // ✅ Success toast
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("$action updated successfully")),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Error updating action: $e"),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected ? color : Colors.white,
