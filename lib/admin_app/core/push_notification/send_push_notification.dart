@@ -23,6 +23,7 @@ Future<void> sendPushNotificationToActiveUsers({
     }
 
     final accessToken = await getAccessToken();
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
@@ -71,6 +72,7 @@ Future<void> sendPushNotificationToActiveUsers({
           },
           "data": {
             "stockName": stockName,
+            "sentAt": now.toString(), // ✅ add timestamp
             if (action != null) "action": action,
             ...?extraData,
           },

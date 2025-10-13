@@ -18,7 +18,10 @@ class _SingleStockAdminPageState extends State<StocksPage> {
   final TextEditingController tgt3Controller = TextEditingController();
 
   String? selectedAction;
+
   bool isLoading = false;
+  String selectedStock = "Select Stock"; // default dropdown value
+
   String? stockDocId;
   bool _controllersInitialized = false;
 
@@ -30,6 +33,19 @@ class _SingleStockAdminPageState extends State<StocksPage> {
     tgt2Controller.dispose();
     tgt3Controller.dispose();
     super.dispose();
+  }
+
+  void clearForm() {
+    setState(() {
+      selectedStock = "Select Stock";
+      stockNameController.clear();
+      slController.clear();
+      tgt1Controller.clear();
+      tgt2Controller.clear();
+      tgt3Controller.clear();
+      selectedAction = null;
+      print("🔹 Form cleared, dropdown reset to default");
+    });
   }
 
   /// Update Firestore field live
@@ -48,6 +64,7 @@ class _SingleStockAdminPageState extends State<StocksPage> {
         context,
       ).showSnackBar(SnackBar(content: Text("Error updating $field: $e")));
     }
+    print("Updating $field = $value");
   }
 
   /// Notify active users
@@ -247,16 +264,75 @@ class _SingleStockAdminPageState extends State<StocksPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                inputField(
+                Text(
                   "Stock Name",
-                  stockNameController,
-                  fieldName: "stockName",
-                ),
-                const Text(
-                  "Buy Or Sell",
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w500,
                     color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 10),
+                // inputField(
+                //   "Stock Name",
+                //   stockNameController,
+                //   fieldName: "stockName",
+                // ),
+                // 🔽 Dropdown with default value
+                DropdownButtonFormField<String>(
+                  value: selectedStock,
+                  dropdownColor: Colors.grey.shade200,
+
+                  style: TextStyle(color: Colors.white),
+                  items: [
+                    DropdownMenuItem(
+                      value: "Select Stock",
+                      child: Text(
+                        "Select Stock",
+                        style: TextStyle(color: Colors.grey.shade800),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: "GOLD",
+                      child: Text(
+                        "GOLD",
+                        style: TextStyle(color: Colors.grey.shade800),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: "AMBUJACEM",
+                      child: Text(
+                        "AMBUJACEM",
+                        style: TextStyle(color: Colors.grey.shade800),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedStock = value;
+                        if (value == "Select Stock") {
+                          stockNameController.text = "";
+                          print(
+                            "🔹 Dropdown reset to default (no stock selected)",
+                          );
+                        } else {
+                          stockNameController.text = value;
+                          print("🔹 Dropdown changed: $value");
+                        }
+                      });
+                    }
+                  },
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.transparent,
+
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 10,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -316,6 +392,22 @@ class _SingleStockAdminPageState extends State<StocksPage> {
                             ),
                           )
                         : const Text("Save / Update"),
+                  ),
+                ),
+                SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: clearForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    child: const Text("Clear"),
                   ),
                 ),
               ],
